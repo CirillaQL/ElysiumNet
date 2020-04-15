@@ -1,87 +1,60 @@
 //
-// Created by QianL on 2020/4/13.
+// Created by QianL on 2020/4/15.
 //
 
 #ifndef ELYSIUMNET_SINGLESOCKETCLIENT_HPP
 #define ELYSIUMNET_SINGLESOCKETCLIENT_HPP
 
 #include <winsock2.h>
+#include <afxres.h>
 #include <iostream>
 
 using namespace std;
 
-BOOL RecvLine(SOCKET s, char* buf);
-
 class SingleClient{
 private:
-    WSADATA wsd; //WSADATA变量
-    SOCKET sHost; //服务器套接字
-    SOCKADDR_IN servAddr; //服务器地址
-    char buf[BUF_SIZE]; //接收数据缓冲区
-    char bufRecv[BUF_SIZE];
-    int retVal; //返回值
+    WSADATA wsadata;
+    SOCKET socket_Client;
+    struct sockaddr_in addr = {0};
 public:
-    SingleClient()= default;
-    bool Init(){
-        if (WSAStartup(MAKEWORD(2, 2), &wsd) != 0)
+    SingleClient(){
+        WSAStartup(MAKEWORD(2,2),&wsadata);
+        SOCKET socket_Client = socket(AF_INET,SOCK_STREAM,0);
+        if(socket_Client == INVALID_SOCKET)
         {
-            cout << "WSAStartup failed!" << endl;
-            return false;
-        }
-        //创建套接字
-        sHost = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (INVALID_SOCKET == sHost)
-        {
-            cout << "socket failed!" << endl;
-            WSACleanup();//释放套接字资源
-            return false;
+            cout << "客户端初始化失败" << endl;
         }
     }
-    bool setAddr(){
-        servAddr.sin_family = AF_INET;
-        servAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-        servAddr.sin_port = htons((short)7980);
-        int nServAddlen = sizeof(servAddr);
+    void setPort(unsigned short port){
+        this->addr.sin_family = AF_INET;
+        this->addr.sin_port = htons(port);
+        this->addr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
     }
-    bool setAddr(char* address, unsigned short port){
-        servAddr.sin_family = AF_INET;
-        servAddr.sin_addr.s_addr = inet_addr(address);
-        servAddr.sin_port = htons(port);
-        int nServAddlen = sizeof(servAddr);
+    void setIP(const char *ip_address){
+        this->addr.sin_addr.S_un.S_addr = inet_addr(ip_address);
     }
-    bool begin(){
-        retVal = connect(sHost, (LPSOCKADDR)&servAddr, sizeof(servAddr));
-        if (SOCKET_ERROR == retVal)
+    void begin(){
+        int iRetVal = connect(socket_Client,(struct sockaddr*)&addr,sizeof(addr));
+        if(SOCKET_ERROR == iRetVal)
         {
-            cout << "connect failed!" << endl;
-            closesocket(sHost); //关闭套接字
-            WSACleanup(); //释放套接字资源
-            return -1;
+            printf("服务器连接失败！");
+            closesocket(socket_Client);
         }
-        while (true)
-        {
-            //向服务器发送数据
-            ZeroMemory(buf, BUF_SIZE);
-            cout << " 向服务器发送数据:  ";
-            cin >> buf;
-            retVal = send(sHost, buf, strlen(buf), 0);
-            if (SOCKET_ERROR == retVal)
-            {
-                cout << "send failed!" << endl;
-                closesocket(sHost); //关闭套接字
-                WSACleanup(); //释放套接字资源
-                return -1;
-            }
-            //RecvLine(sHost, bufRecv);
-            ZeroMemory(bufRecv, BUF_SIZE);
-            recv(sHost, bufRecv, BUF_SIZE, 0); // 接收服务器端的数据， 只接收5个字符
-            cout << endl << "从服务器接收数据：" << bufRecv;
-            cout << "\n";
-        }
+        printf("服务器连接成功！\n");
+        //数据收发
+        CHAR szSend[100] = "END";   //客户端  先发后收
+        send(socket_Client,szSend,sizeof(szSend),0);  //发送函数，可以通过返回值判断发送成功与否。
+        //接收服务器回传的数据
+        CHAR szRecv[100] = {0};
+        recv(socket_Client,szRecv,100,0); //接收函数
+        printf("%s\n",szRecv);//表示以字符串的格式输出服务器端发送的内容。
     }
     void close(){
-        closesocket(sHost); //关闭套接字
-        WSACleanup(); //释放套接字资源
+        closesocket(socket_Client);
+    }
+    ~SingleClient(){
+        closesocket(socket_Client);
+        WSACleanup();
     }
 };
 

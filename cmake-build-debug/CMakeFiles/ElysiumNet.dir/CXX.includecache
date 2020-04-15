@@ -6,23 +6,23 @@
 
 #IncludeRegexTransform: 
 
-C:/Users/QianL/CLionProjects/ElysiumNet/Net/SingleSocketClient.hpp
-winsock2.h
--
-iostream
--
-
 C:/Users/QianL/CLionProjects/ElysiumNet/Net/SingleSocketServer.hpp
 winsock2.h
 -
 iostream
+-
+exception
+-
+thread
+-
+string
+-
+afxres.h
+-
+windows.h
 -
 
 C:/Users/QianL/CLionProjects/ElysiumNet/main.cpp
-iostream
--
 Net/SingleSocketServer.hpp
 C:/Users/QianL/CLionProjects/ElysiumNet/Net/SingleSocketServer.hpp
-Net/SingleSocketClient.hpp
-C:/Users/QianL/CLionProjects/ElysiumNet/Net/SingleSocketClient.hpp
 

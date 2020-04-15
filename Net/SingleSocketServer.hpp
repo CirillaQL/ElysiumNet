@@ -7,8 +7,11 @@
 
 #include <winsock2.h>
 #include <iostream>
-
-const int BUF_SIZE = 1024;
+#include <exception>
+#include <thread>
+#include <string>
+#include <afxres.h>
+#include <windows.h>
 
 using namespace std;
 
@@ -17,98 +20,67 @@ private:
     WSADATA wsadata;
     SOCKET socket_Server;
     SOCKET socket_Client;
-    SOCKADDR_IN addrServer;
-    char rev_buf[BUF_SIZE];
-    char send_buf[BUF_SIZE];
-    int retVal;
+    SOCKADDR_IN  serverAddr = {0};
+    SOCKADDR_IN  clientAddr = {0};
 public:
-    SingleServer()= default;
-
-    bool Init(){
-        if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
-        {
-            cout << "WSAStartup failed!" << endl;
-            return false;
+    SingleServer(){
+        WORD _word = MAKEWORD(2, 2);
+        int init_code = WSAStartup(_word,&this->wsadata);
+        if (init_code != 0){
+            cout << "Socket API初始化失败. 错误代码为"+to_string(init_code) << endl;
         }
-        //创建套接字
-        socket_Server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (INVALID_SOCKET == socket_Server)
-        {
-            cout << "socket failed!" << endl;
-            WSACleanup();//释放套接字资源;
-            return false;
+        this->socket_Server = socket(AF_INET,SOCK_STREAM,0);
+        if (socket_Server == INVALID_SOCKET){
+            cout << "Socket初始化失败" <<endl;
         }
-        return true;
     }
-
-    bool Bind(unsigned short port){
-        addrServer.sin_family = AF_INET;
-        addrServer.sin_port = htons(port);
-        addrServer.sin_addr.s_addr = INADDR_ANY;
-        //绑定套接字
-        retVal = bind(socket_Server, (LPSOCKADDR)&addrServer, sizeof(SOCKADDR_IN));
-        if (SOCKET_ERROR == retVal)
-        {
-            cout << "bind failed!" << endl;
-            closesocket(socket_Server);   //关闭套接字
-            WSACleanup();           //释放套接字资源;
-            return false;
+    //设置端口后直接绑定监听
+    void setPort(const unsigned short port){
+        this->serverAddr.sin_family = AF_INET;
+        this->serverAddr.sin_port = htons(port);
+        this->serverAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
+        int bind_result = bind(socket_Server,(struct sockaddr *)& serverAddr, sizeof(serverAddr));
+        if (bind_result != 0){
+            cout << "绑定端口与地址错误,错误码为"+to_string(bind_result) << endl;
         }
-        return true;
-    }
-
-    bool Listen(){
-        retVal = listen(socket_Server, 1);
-        if (SOCKET_ERROR == retVal)
-        {
-            cout << "listen failed!" << endl;
-            closesocket(socket_Server);   //关闭套接字
-            WSACleanup();           //释放套接字资源;
-            return false;
+        int listen_result = listen(socket_Server,1);
+        if (listen_result != 0){
+            cout << "监听错误,错误码为"+to_string(listen_result) << endl;
         }
-        return true;
     }
-
+    //设置ip地址
+    void setIPaddress(const char *ip_address){
+        this->serverAddr.sin_addr.S_un.S_addr = inet_addr(ip_address);
+    }
+    //开始
     void begin(){
-        sockaddr_in addrClient;
-        int addrClientlen = sizeof(addrClient);
-        socket_Client = accept(socket_Server, (sockaddr FAR*)&addrClient, &addrClientlen);
-        if (INVALID_SOCKET == socket_Client)
-        {
-            cout << "accept failed!" << endl;
-            closesocket(socket_Server);   //关闭套接字
-            WSACleanup();           //释放套接字资源;
-
-        }
-
-        while (true)
-        {
-            //接收客户端数据
-            ZeroMemory(rev_buf, BUF_SIZE);
-            retVal = recv(socket_Client, rev_buf, BUF_SIZE, 0);
-            if (SOCKET_ERROR == retVal)
-            {
-                cout << "recv failed!" << endl;
-                closesocket(socket_Server);   //关闭套接字
-                closesocket(socket_Client);   //关闭套接字
-                WSACleanup();           //释放套接字资源;
-            }
-            if (rev_buf[0] == '0')
+        while(true){
+            int nLen = sizeof(clientAddr);
+            this->socket_Client = accept(socket_Server,(struct sockaddr*)&clientAddr, &nLen);
+            cout << "客户端已连接" << endl;
+            CHAR szText[100] = {0};
+            //接收缓冲区数据
+            recv(socket_Client,szText,100,0); //接收函数，一直处于侦听模式，等待服务器端发送数据的到来。
+            string s = szText;
+            if(s == "END"){
                 break;
-            cout << "客户端发送的数据: " << rev_buf << endl;
-
-            cout << "向客户端发送数据: ";
-            cin >> send_buf;
-
-            send(socket_Client, send_buf, strlen(send_buf), 0);
+            }
+            printf("%s\n",szText);
+            CHAR szSend[100] = "Hello Client";
+            send(socket_Client,szSend,sizeof(szSend),0);
         }
     }
-
+    //关闭连接
     void close(){
-        closesocket(socket_Server);   //关闭套接字
-        closesocket(socket_Client);   //关闭套接字
-        WSACleanup();           //释放套接字资源;
+        closesocket(socket_Client);
+        closesocket(socket_Server);
     }
+    ~SingleServer(){
+        closesocket(socket_Client);
+        closesocket(socket_Server);
+        WSACleanup();
+    }
+
 };
 
 #endif //ELYSIUMNET_SINGLESOCKETSERVER_HPP
