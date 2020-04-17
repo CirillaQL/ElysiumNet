@@ -12,6 +12,7 @@
 #include <string>
 #include <afxres.h>
 #include <windows.h>
+#include "Time.hpp"
 
 using namespace std;
 
@@ -66,8 +67,14 @@ public:
                 break;
             }
             printf("%s\n",szText);
-            CHAR szSend[100] = "Hello Client";
-            send(socket_Client,szSend,sizeof(szSend),0);
+            string The_time = GetNowTime();
+            char _time[100];
+            int i = 0;
+            for(;i < The_time.length();i++){
+                _time[i] = The_time[i];
+            }
+            _time[i] = '\0';
+            send(socket_Client,_time,sizeof(_time),0);
         }
     }
     //¹Ø±ÕÁ¬½Ó
