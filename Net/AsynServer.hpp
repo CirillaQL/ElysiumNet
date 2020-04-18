@@ -5,148 +5,164 @@
 #ifndef ELYSIUMNET_ASYNSERVER_HPP
 #define ELYSIUMNET_ASYNSERVER_HPP
 
-#include <winsock2.h>
 #include <iostream>
-#include <thread>
-#include "Time.hpp"
+#include <winsock2.h>
+#include <process.h>
+#include <mutex>
+#include <deque>
+#include <map>
+
+unsigned int WINAPI CreateServer(LPVOID args);
+unsigned int WINAPI Proc(LPVOID args);
 
 using namespace std;
 
-#define BUF_SIZE 1024
+char buf[1024];
+const int _bufLen = 1024;
 
-void CALLBACK ReadCompRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
-void CALLBACK WriteCompRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
-void ErrorHanding(char * message);
-
-typedef struct {
-    SOCKET hClntSock;    //套接字句柄
-    char buf[BUF_SIZE];
-    WSABUF wsabuf;
-}PER_IO_DATA,*LPPER_IO_DATA;
+struct AsynClient
+{
+    WSAOVERLAPPED overlapped;
+    SOCKET socket;
+    WSABUF buf;
+    int procID;
+    int id;
+};
 
 class Server{
 private:
-    WSAData wsaData;
-    SOCKET hLinsnSock, hRecvSock;
-    SOCKADDR_IN lisnAdr, recvAdr;
-    LPWSAOVERLAPPED lpOvlap;
-    DWORD recvBytes;
-    LPPER_IO_DATA hbInfo;
-    int recvAdrSz;
-    DWORD flagInfo = 0;
-    u_long mode = 1;
+    SYSTEM_INFO  sysInfo;
+    HANDLE CompPort;
+    DWORD dwRecvCount = 0;
+    DWORD nFlag = 0;
+    map<int, AsynClient*> Clients;
+    mutex _mutex;
+    int _thread_count;
 public:
     Server(){
-        WORD _word = MAKEWORD(2,2);
-        if(WSAStartup(_word,&this->wsaData) != 0){
-            cout << "Socket API初始化失败. "<<endl;
-        }
-        hLinsnSock = WSASocket(PF_INET,SOCK_STREAM,0,NULL,0,WSA_FLAG_OVERLAPPED);
-        //将hLisnSock句柄的套接字I/O模式(FIONBIO)改为mode中指定的非阻塞模式
-        ioctlsocket(hLinsnSock,FIONBIO,&mode);
+        CompPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
+        GetSystemInfo(&sysInfo);
+        _thread_count = sysInfo.dwNumberOfProcessors * 2;
     }
-    void setPort(const unsigned short port){
-        memset(&lisnAdr,0,sizeof(lisnAdr));
-        lisnAdr.sin_family = AF_INET;
-        lisnAdr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
-        lisnAdr.sin_port = htons(port);
-    }
-    //设置监听
-    void Listen(){
-        if (bind(hLinsnSock, (SOCKADDR*)&lisnAdr, sizeof(lisnAdr)) == SOCKET_ERROR)
-            ErrorHanding("socket bind error!");
-        if (listen(hLinsnSock, 5) == SOCKET_ERROR)
-            ErrorHanding("socket listen error!");
+    void release(AsynClient* c)
+    {
+        _mutex.lock();
+        Clients.erase(c->id);
+        _mutex.unlock();
+        closesocket(c->socket);
+        delete[] c->buf.buf;
+        delete c;
     }
     void begin(){
-        recvAdrSz = sizeof(recvAdr);
-        while (1)
-        {
-            //进入短暂alertable wait 模式，运行ReadCompRoutine、WriteCompRoutine函数
-            SleepEx(1, TRUE);
+        CreateServer(0);
+        for (int i = 0; i < _thread_count; i++) {
+            int* temp = new int(i);
+            _beginthreadex(0, 0, reinterpret_cast<unsigned int (*)(void *)>(this->Proc(0)), temp, 0, 0);
+        }
+    }
+    unsigned int WINAPI CreateServer(LPVOID args){
+        WORD wVersion;
+        WSADATA wsaData;
+        int err;
+        wVersion = MAKEWORD(2, 2);
+        err = WSAStartup(wVersion, &wsaData);
+        if (err != 0) {
+            return 0;
+        }
+        if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+            WSACleanup();
+            return 0;
+        }
+        SOCKET sockSrv = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
+        const char chOpt = 1;
+        setsockopt(sockSrv, IPPROTO_TCP, TCP_NODELAY, &chOpt, sizeof(chOpt));
 
-            //非阻塞套接字，需要处理INVALID_SOCKET
-            //返回的新的套接字也是非阻塞的
-            hRecvSock = accept(hLinsnSock, (SOCKADDR*)&recvAdr, &recvAdrSz);
-            if (hRecvSock == INVALID_SOCKET)
+        int nSendBufLen = 16 * 1024 * 1024;
+        setsockopt(sockSrv, SOL_SOCKET, SO_SNDBUF, (const char*)&nSendBufLen, sizeof(int));
+
+        SOCKADDR_IN addrSrv;
+        addrSrv.sin_addr.S_un.S_addr = htonl(ADDR_ANY);
+        addrSrv.sin_family = AF_INET;
+        addrSrv.sin_port = htons(6001);
+        ::bind(sockSrv, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
+        err = listen(sockSrv, SOMAXCONN);
+        if (err == SOCKET_ERROR) {
+            cout << "listen failed" << endl;
+            WSACleanup();
+            return 0;
+        }
+        SOCKADDR_IN remoteAddr;
+        int addrSize = sizeof(remoteAddr);
+        //accept loop
+        while (true) {
+            SOCKET s = accept(sockSrv, (SOCKADDR*)&remoteAddr, &addrSize);;
+            AsynClient* c = new AsynClient;
+            memset(c, 0, sizeof(AsynClient));
+            c->socket = s;
+            char*  buf = new char[_bufLen];
+            memset(buf, 0, _bufLen);
+            c->buf.buf = buf;
+            c->buf.len = _bufLen;
+            _mutex.lock();
+            int id;
+            do
             {
-                //无客户端连接时，accept返回INVALID_SOCKET，WSAGetLastError()返回WSAEWOULDBLOCK
-                if (WSAGetLastError() == WSAEWOULDBLOCK)
-                    continue;
-                else
-                    ErrorHanding("accept() error");
+                id = rand() % INT_MAX;
+            } while (Clients.find(id) != Clients.end());
+            Clients.insert(pair<int, AsynClient*>(id, c));
+            c->id = id;
+            _mutex.unlock();
+            if(CreateIoCompletionPort((HANDLE)c->socket,CompPort,(ULONG_PTR)c,0)==0)
+            {
+                continue;
             }
+            if(WSARecv(c->socket, &c->buf, 1, &dwRecvCount, &nFlag, &c->overlapped, 0)==SOCKET_ERROR)
+            {
+                int err = WSAGetLastError();
+                if(err!=WSA_IO_PENDING)
+                {
+                    release(c);
+                }
+            }
+        }
+        return 0;
+    }
+    unsigned int WINAPI Proc(LPVOID args)
+    {
+        while (true)
+        {
+            AsynClient* c;
+            DWORD dwTransferred;
+            LPWSAOVERLAPPED overlapped;
+            if(GetQueuedCompletionStatus(CompPort, &dwTransferred, (PULONG_PTR)&c, &overlapped,INFINITE))
+            {
+                if(dwTransferred==0)
+                {
+                    release(c);
+                    continue;
+                }
+                cout << buf << endl;
+                memset(c->buf.buf, 0, _bufLen);
+                const char* l = "shit";
+                send(c->socket, l, 128, 0);
 
-            puts("Client connected");
-
-            //申请重叠I/O需要使用的结构体变量的内存空间并初始化
-            //在循环内部申请：每个客户端需要独立的WSAOVERLAPPED结构体变量
-            lpOvlap = (LPWSAOVERLAPPED)malloc(sizeof(WSAOVERLAPPED));
-            memset(lpOvlap, 0, sizeof(WSAOVERLAPPED));
-
-            hbInfo = (LPPER_IO_DATA)malloc(sizeof(PER_IO_DATA));
-            hbInfo->hClntSock = (DWORD)hRecvSock;
-
-            (hbInfo->wsabuf).buf = hbInfo->buf;
-            (hbInfo->wsabuf).len = BUF_SIZE;
-
-            //基于CR的重叠I/O不需要事件对象，故可以用来传递其他信息
-            lpOvlap->hEvent = (HANDLE)hbInfo;
-            //接收第一条信息
-            WSARecv(hRecvSock, &(hbInfo->wsabuf), 1, &recvBytes, &flagInfo, lpOvlap, ReadCompRoutine);
+                if (WSARecv(c->socket, &c->buf, 1, &dwRecvCount, &nFlag, &c->overlapped, 0) == SOCKET_ERROR)
+                {
+                    int err = WSAGetLastError();
+                    if (err != WSA_IO_PENDING)
+                    {
+                        release(c);
+                    }
+                }
+            }
+            else
+            {
+                release(c);
+            }
         }
     }
 };
 
-void CALLBACK ReadCompRoutine(DWORD dwError, DWORD szRecvBytes, LPWSAOVERLAPPED lpOverlapped, DWORD flags)
-{
-    //从lpoverlapped中恢复传递的信息
-    LPPER_IO_DATA hbInfo = (LPPER_IO_DATA)(lpOverlapped->hEvent);
-    SOCKET hSock = hbInfo->hClntSock;
-    LPWSABUF bufInfo = &(hbInfo->wsabuf);
-    DWORD sentBytes;
-    //接收到EOF，断开连接
-    if (szRecvBytes == 0)
-    {
-        closesocket(hSock);
-        free(hbInfo);
-        free(lpOverlapped);
-        puts("Client disconnected");
-    }
-    else
-    {
-        //bufInfo->len = szRecvBytes;
-        string The_time = GetNowTime();
-        char _time[100];
-        int i = 0;
-        for(;i < The_time.length();i++){
-            _time[i] = The_time[i];
-        }
-        _time[i] = '\0';
-        bufInfo->len = sizeof(_time);
-        bufInfo->buf = _time;
-        //将接收到的信息回传回去，传递完毕执行WriteCompRoutine(): 接收信息
-        WSASend(hSock, bufInfo, 1, &sentBytes, 0, lpOverlapped, WriteCompRoutine);
-    }
-}
 
-void CALLBACK WriteCompRoutine(DWORD dwError, DWORD szRecvBytes, LPWSAOVERLAPPED lpOverlapped, DWORD flags)
-{
-    //从lpoverlapped中恢复传递的信息
-    LPPER_IO_DATA hbInfo = (LPPER_IO_DATA)(lpOverlapped->hEvent);
-    SOCKET hSock = hbInfo->hClntSock;
-    LPWSABUF bufInfo = &(hbInfo->wsabuf);
-    DWORD recvBytes;
-    DWORD flagInfo = 0;
-    //接收数据，接收完毕执行ReadCompRoutine：发送数据
-    WSARecv(hSock, bufInfo, 1, &recvBytes, &flagInfo, lpOverlapped, ReadCompRoutine);
-    //cout << bufInfo->buf << endl;
-}
-
-void ErrorHanding(char * message)
-{
-    cout << message << endl;
-    exit(1);
-}
 
 #endif //ELYSIUMNET_ASYNSERVER_HPP

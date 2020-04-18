@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="BRANCH:origin/master" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </select>
+  </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
       <config projectName="ElysiumNet" targetName="ElysiumNet" />
@@ -11,41 +36,13 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9ade2292-2b24-489e-84b2-085cc23a1902" name="Default Changelist" comment="&quot;添加SingleSocketClient文件，完成单接口socket客户端&quot;">
-      <change afterPath="$PROJECT_DIR$/Net/AsynServer.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Net/Time.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+    <list default="true" id="9ade2292-2b24-489e-84b2-085cc23a1902" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Net/SingleSocketServer.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/Net/SingleSocketServer.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CMakeCCompiler.cmake" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CMakeCXXCompiler.cmake" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CMakeDetermineCompilerABI_C.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CMakeDetermineCompilerABI_CXX.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CMakeRCCompiler.cmake" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CMakeSystem.cmake" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CompilerIdC/CMakeCCompilerId.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CompilerIdC/a.exe" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CompilerIdCXX/CMakeCXXCompilerId.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.15.3/CompilerIdCXX/a.exe" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeDirectoryInformation.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeDirectoryInformation.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeOutput.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeOutput.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Net/AsynServer.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/Net/AsynServer.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/CXX.includecache" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/CXX.includecache" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/build.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/build.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/depend.internal" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/depend.internal" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/depend.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/depend.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/flags.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/flags.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/linklibs.rsp" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/linklibs.rsp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/main.cpp.obj" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/main.cpp.obj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/objects.a" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/ElysiumNet.dir/objects.a" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-environment.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-environment.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-log.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/ElysiumNet.cbp" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/ElysiumNet.cbp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/ElysiumNet.exe" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/ElysiumNet.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Makefile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -81,7 +78,7 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="restartRequiresConfirmation" value="false" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.selected.configurable" value="reference.settingsdialog.IDE.editor.colors.General" />
   </component>
   <component name="RunManager">
     <configuration name="ElysiumNet" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="ElysiumNet" TARGET_NAME="ElysiumNet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="ElysiumNet" RUN_TARGET_NAME="ElysiumNet">
@@ -125,7 +122,9 @@
       <workItem from="1587088796221" duration="349000" />
       <workItem from="1587089306737" duration="251000" />
       <workItem from="1587092585973" duration="1427000" />
-      <workItem from="1587107758617" duration="313000" />
+      <workItem from="1587107758617" duration="1297000" />
+      <workItem from="1587114360035" duration="508000" />
+      <workItem from="1587194900460" duration="3250000" />
     </task>
     <task id="LOCAL-00001" summary="&quot;添加SingleSocketClient文件，完成单接口socket客户端&quot;">
       <created>1586911032968</created>
@@ -134,7 +133,14 @@
       <option name="project" value="LOCAL" />
       <updated>1586911032968</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="&quot;采用IOCP技术，初步完成异步Socket AsynServer&quot;">
+      <created>1587108139723</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1587108139723</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -145,7 +151,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
@@ -154,49 +172,50 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="&quot;添加SingleSocketClient文件，完成单接口socket客户端&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="&quot;添加SingleSocketClient文件，完成单接口socket客户端&quot;" />
+    <MESSAGE value="&quot;采用IOCP技术，初步完成异步Socket AsynServer&quot;" />
+    <option name="LAST_COMMIT_MESSAGE" value="&quot;采用IOCP技术，初步完成异步Socket AsynServer&quot;" />
   </component>
   <component name="WindowStateProjectService">
     <state x="361" y="70" key="#New_File_Extensions" timestamp="1586739553996">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="361" y="70" key="#New_File_Extensions/0.0.1536.824@0.0.1536.824" timestamp="1586739553996" />
-    <state x="649" y="255" key="#Notifications" timestamp="1587000318095">
+    <state x="649" y="255" key="#Notifications" timestamp="1587114584404">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="649" y="255" key="#Notifications/0.0.1536.824@0.0.1536.824" timestamp="1587000318095" />
+    <state x="649" y="255" key="#Notifications/0.0.1536.824@0.0.1536.824" timestamp="1587114584404" />
     <state x="223" y="67" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1586583035438">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="223" y="67" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824@0.0.1536.824" timestamp="1586583035438" />
-    <state x="338" y="0" key="CommitChangelistDialog2" timestamp="1587000613938">
+    <state x="338" y="0" key="CommitChangelistDialog2" timestamp="1587108138498">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="338" y="0" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1587000613938" />
-    <state width="1492" height="445" key="GridCell.Tab.0.bottom" timestamp="1587101383556">
+    <state x="338" y="0" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1587108138498" />
+    <state width="1492" height="445" key="GridCell.Tab.0.bottom" timestamp="1587197671821">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1492" height="445" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1587101383556" />
-    <state width="1492" height="445" key="GridCell.Tab.0.center" timestamp="1587101383555">
+    <state width="1492" height="445" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1587197671821" />
+    <state width="1492" height="445" key="GridCell.Tab.0.center" timestamp="1587197671820">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1492" height="445" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1587101383555" />
-    <state width="1492" height="445" key="GridCell.Tab.0.left" timestamp="1587101383555">
+    <state width="1492" height="445" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1587197671820" />
+    <state width="1492" height="445" key="GridCell.Tab.0.left" timestamp="1587197671820">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1492" height="445" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1587101383555" />
-    <state width="1492" height="445" key="GridCell.Tab.0.right" timestamp="1587101383556">
+    <state width="1492" height="445" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1587197671820" />
+    <state width="1492" height="445" key="GridCell.Tab.0.right" timestamp="1587197671821">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1492" height="445" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1587101383556" />
-    <state x="499" y="51" key="SettingsEditor" timestamp="1587000506343">
+    <state width="1492" height="445" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1587197671821" />
+    <state x="129" y="51" key="SettingsEditor" timestamp="1587108517302">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="499" y="51" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1587000506343" />
-    <state x="361" y="145" key="Vcs.Push.Dialog.v2" timestamp="1586911219880">
+    <state x="129" y="51" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1587108517302" />
+    <state x="361" y="145" key="Vcs.Push.Dialog.v2" timestamp="1587108170919">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="361" y="145" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1586911219880" />
+    <state x="361" y="145" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1587108170919" />
     <state x="430" y="236" key="com.intellij.ide.util.TipDialog" timestamp="1586909145209">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -205,9 +224,9 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="562" y="322" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1536.824@0.0.1536.824" timestamp="1587000592438" />
-    <state x="431" y="146" width="672" height="678" key="search.everywhere.popup" timestamp="1587088228539">
+    <state x="431" y="146" width="672" height="678" key="search.everywhere.popup" timestamp="1587196764027">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="431" y="146" width="672" height="678" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1587088228539" />
+    <state x="431" y="146" width="672" height="678" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1587196764027" />
   </component>
 </project>
