@@ -125,7 +125,6 @@ public:
                 }
             }
         }
-        return 0;
     }
     unsigned int WINAPI Proc(LPVOID args)
     {

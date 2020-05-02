@@ -1,10 +1,10 @@
 
-#include "Net/SingleSocketServer.hpp"
-#include "Net/AsynServer.hpp"
+#include "Net/AsynFTPServer.hpp"
 
 int main() {
-    Server server;
-    server.begin();
+    FTPServer a;
+    a.setPort(1234);
+    a.start();
     //std::cout << "Hello, World!" << std::endl;
     return 0;
 }
