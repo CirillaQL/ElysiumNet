@@ -8,7 +8,8 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <iostream>
-#include <process.h>
+#include <stdio.h>
+#include <memory.h>
 
 using namespace std;
 
@@ -29,166 +30,213 @@ public:
     ~SystemInfo()= default;
 };
 
-typedef struct{
-    SOCKET Client;
-    SOCKADDR_IN Client_Addr;
-} HANDLE_DATA, *LPPER_HANDLE_DATA;
-
-typedef struct    // buffer info
+typedef struct _PER_HANDLE_DATA
 {
-    OVERLAPPED overlapped;
-    WSABUF wsaBuf;
-    char buffer[BUF_SIZE];
-    int rwMode;    // READ or WRITE ËØªÂÜôÊ®°Âºè
-} PER_IO_DATA, *LPPER_IO_DATA;
+    SOCKET sock;
+}PER_HANDLE_DATA,* LPPER_HANDLE_DATA;
 
-unsigned int WINAPI WorkerThread(LPVOID CompletionPortIO);//Â∑•‰ΩúÁ∫øÁ®ã
-SOCKET ALLCLIENT[1024];
-int client_count = 0;
-HANDLE mutex;
+typedef struct _PER_IO_OPERATION_DATA
+{
+    OVERLAPPED Overlapped;
+    WSABUF DataBuff;
+    char Buff[BUF_SIZE];
+    //BOOL OperationType;
+}PER_IO_OPERATION_DATA,* LPPER_IO_OPERATION_DATA;
+
+unsigned int WINAPI WorkerThread(LPVOID CompletionPort);//π§◊˜œﬂ≥Ã
 
 class FTPServer{
 private:
     WSADATA wsadata;
-    HANDLE CompletionPort;      //ÂÆåÊàêÁ´ØÂè£
-    LPPER_IO_DATA ioINFO;
-    LPPER_HANDLE_DATA handleInfo;
-
-    SOCKET ServerSocket;
-    SOCKADDR_IN ServerAddr;
-    
-    DWORD recvBytes = 0, flag = 0;
+    DWORD nThreadID;
+    SOCKET sockListen;
+    struct sockaddr_in addrLocal;
+    int nReuseAddr = 1;
+    LPPER_HANDLE_DATA perHandleData;
+    LPPER_IO_OPERATION_DATA ioperdata;
+    SOCKET sockAccept;
+    DWORD dwFlags = 0;
+    DWORD dwRecvBytes;
+    HANDLE hCompletionPort;
 public:
     FTPServer(){
         if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0){
-            cout << "ÂàùÂßãÂåñÂ§±Ë¥•" << endl;
+            cout << "≥ı ºªØ ß∞‹" << endl;
         }
-        CompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr,0,0);
+        hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr,0,0);
         auto a = new SystemInfo();
-        for (int i = 0; i < a->get_Number_Processors(); i++) {
-            _beginthreadex(nullptr, 0, WorkerThread, (LPVOID)CompletionPort, 0, nullptr);
+        for (int i = 1; i <= a->get_Number_Processors() * 2; i++) {
+            _beginthreadex(nullptr, 0, WorkerThread, (LPVOID)hCompletionPort, 0, nullptr);
+            cout<<"¥¥Ω®π§◊˜’ﬂœﬂ≥Ã"<<i<<endl;
         }
-        ServerSocket = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);//‰∏çÊòØÈùûÈòªÂ°ûÂ•óÊé•Â≠óÔºå‰ΩÜÊòØÈáçÂè†IOÂ•óÊé•Â≠ó„ÄÇ
+        sockListen = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);//≤ª «∑«◊Ë»˚Ã◊Ω”◊÷£¨µ´ «÷ÿµ˛IOÃ◊Ω”◊÷°£
+        if(setsockopt(sockListen,SOL_SOCKET,SO_REUSEADDR,(const char *)&nReuseAddr,sizeof(int)) != 0)
+        {
+            cout<<"setsockopt¥ÌŒÛ"<<endl;
+            exit(1);
+        }
     }
     void setPort(short port){
-        memset(&ServerAddr, 0, sizeof(ServerAddr));
-        ServerAddr.sin_family = AF_INET;
-        ServerAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        ServerAddr.sin_port = htons(port);
+        memset(&addrLocal, 0, sizeof(addrLocal));
+        addrLocal.sin_family = AF_INET;
+        addrLocal.sin_addr.s_addr = htonl(INADDR_ANY);
+        addrLocal.sin_port = htons(port);
         
-        bind(ServerSocket,(SOCKADDR*)&ServerAddr,sizeof(ServerAddr));
-        listen(ServerSocket,10);
+        bind(sockListen,(SOCKADDR*)&addrLocal,sizeof(addrLocal));
+        listen(sockListen,10);
+        cout<<"Socket Listen º‡Ã˝÷–..."<<endl;
     }
 
     void start(){
         while(true){
-            SOCKET hClntSock;
-            SOCKADDR_IN clntAdr;
-            int addrLen = sizeof(clntAdr);
+            sockAccept = WSAAccept(sockListen,NULL,NULL,NULL,0);
+            perHandleData = (LPPER_HANDLE_DATA)malloc(sizeof(PER_HANDLE_DATA));
+            if(perHandleData == NULL)
+                continue;
+            cout<<"Accept:socket number "<<sockAccept<<"Ω”»Î"<<endl;
+            perHandleData->sock = sockAccept;
 
-            hClntSock = accept(ServerSocket, (SOCKADDR*)&clntAdr, &addrLen);
-
-            handleInfo = (LPPER_HANDLE_DATA)malloc(sizeof(HANDLE_DATA));//ÂíåÈáçÂè†IO‰∏ÄÊ†∑
-            handleInfo->Client = hClntSock;//Â≠òÂÇ®ÂÆ¢Êà∑Á´ØÂ•óÊé•Â≠ó
-            //WaitForSingleObject‰∏∫Á≠âÂæÖÁ∫øÁ®ãÈÉΩÂÆåÊØïÂêéÂÜçÊâßË°å„ÄÇ
-            WaitForSingleObject(mutex, INFINITE);//Á∫øÁ®ãÂêåÊ≠•
-
-            ALLCLIENT[client_count++] = hClntSock;//Â≠òÂÖ•Â•óÊé•Â≠óÈòüÂàó
-
-            ReleaseMutex(mutex);
-
-            memcpy(&(handleInfo->Client_Addr), &clntAdr, addrLen);
-
-            CreateIoCompletionPort((HANDLE)hClntSock, CompletionPort, reinterpret_cast<ULONG_PTR>(handleInfo), 0);//ËøûÊé•Â•óÊé•Â≠óÂíåCPÂØπË±°
-            //Â∑≤ÂÆåÊàê‰ø°ÊÅØÂ∞ÜÂÜôÂÖ•CPÂØπË±°
-            ioINFO = (LPPER_IO_DATA)malloc(sizeof(PER_IO_DATA));//Â≠òÂÇ®Êé•Êî∂Âà∞ÁöÑ‰ø°ÊÅØ
-            memset(&(ioINFO->overlapped), 0, sizeof(OVERLAPPED));
-            ioINFO->wsaBuf.len = BUF_SIZE;
-            ioINFO->wsaBuf.buf = ioINFO->buffer;//ÂíåÈáçÂè†IO‰∏ÄÊ†∑
-            ioINFO->rwMode = 1;//ËØªÂÜôÊ®°Âºè
-
-            WSARecv(handleInfo->Client, &(ioINFO->wsaBuf),//ÈùûÈòªÂ°ûÊ®°Âºè
-                    1, &recvBytes, &flag, &(ioINFO->overlapped), nullptr);
+            ioperdata = (LPPER_IO_OPERATION_DATA)malloc(sizeof(PER_IO_OPERATION_DATA));
+            memset(&(ioperdata->Overlapped),0,sizeof(OVERLAPPED));
+            ioperdata->DataBuff.len = BUF_SIZE;
+            ioperdata->DataBuff.buf = ioperdata->Buff;
+            if( ioperdata == NULL)
+            {
+                free(perHandleData);
+                continue;
+            }
+            //πÿ¡™
+            //cout<<"πÿ¡™SOCKET∫ÕÕÍ≥…∂Àø⁄..."<<endl;
+            if(CreateIoCompletionPort((HANDLE)sockAccept,hCompletionPort,reinterpret_cast<ULONG_PTR>(perHandleData),0) == NULL)
+            {
+                cout<<sockAccept<<"createiocompletionport¥ÌŒÛ"<<endl;
+                free(perHandleData);
+                free(ioperdata);
+                continue;
+            }
+            ////Õ∂µ›Ω” ’≤Ÿ◊˜ ±ÿ–Î”–’‚æ‰,∑Ò‘Ú ∫Û√Êµƒ ˝æ› Œﬁ∑®Ω” ‹.
+            cout<<"Õ∂µ›Ω” ’≤Ÿ◊˜"<<endl;
+            if (SOCKET_ERROR == WSARecv(sockAccept,&(ioperdata->DataBuff),1,&dwRecvBytes,&dwFlags,&(ioperdata->Overlapped),NULL))
+            {
+                cout << "WSARecv ERROR:" << WSAGetLastError() << endl;
+            }
         }
     }
 };
 
-unsigned int WINAPI WorkerThread(LPVOID CompletionPortIO)//Á∫øÁ®ãÁöÑÊâßË°å
+unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//œﬂ≥Ãµƒ÷¥––
 {
-    HANDLE hComPort = (HANDLE)CompletionPortIO;
-    SOCKET sock;
-    DWORD bytesTrans;
-    LPPER_HANDLE_DATA handleInfo;
-    LPPER_IO_DATA ioInfo;
-    DWORD flags = 0;
-
-    while (1)//Â§ßÂæ™ÁéØ
+    HANDLE ComPort = (HANDLE)CompletionPort;
+    DWORD BytesTransferred;
+    LPPER_HANDLE_DATA PerHandleData;
+    LPPER_IO_OPERATION_DATA PerIoData;
+    DWORD SendBytes,RecvBytes;
+    DWORD Flags = 0;
+    while(TRUE)
     {
-        GetQueuedCompletionStatus(hComPort, &bytesTrans,//Á°ÆËÆ§‚ÄúÂ∑≤ÂÆåÊàê‚ÄùÁöÑI/OÔºÅÔºÅ
-                                  reinterpret_cast<PULONG_PTR>((LPDWORD) &handleInfo), (LPOVERLAPPED*)&ioInfo, INFINITE);//INFINITE‰ΩøÁî®Êó∂ÔºåÁ®ãÂ∫èÂ∞ÜÈòªÂ°ûÔºåÁõ¥Âà∞Â∑≤ÂÆåÊàêÁöÑI/O‰ø°ÊÅØÂÜôÂÖ•CPÂØπË±°
-        sock = handleInfo->Client;//ÂÆ¢Êà∑Á´ØÂ•óÊé•Â≠ó
-
-        if (ioInfo->rwMode == 1)//ËØªÂÜôÊ®°ÂºèÔºàÊ≠§Êó∂ÁºìÂÜ≤Âå∫ÊúâÊï∞ÊçÆÔºâ
+        //µ»¥˝ÕÍ≥…∂Àø⁄…œSOCKETµƒÕÍ≥…
+        //cout<<"["<<GetCurrentProcessId()<<":"<<GetCurrentThreadId()<<"]"<<":µ»¥˝ÕÍ≥…∂Àø⁄…œSOCKETµƒÕÍ≥…"<<endl;
+        GetQueuedCompletionStatus(ComPort,&BytesTransferred, reinterpret_cast<PULONG_PTR>((LPDWORD) &PerHandleData),(LPOVERLAPPED *)&PerIoData, INFINITE);
+        //ºÏ≤È «∑Ò”–¥ÌŒÛ≤˙…˙
+        if(BytesTransferred == 0)
         {
-            puts("message received!");
-            if (bytesTrans == 0)    // ËøûÊé•ÁªìÊùü
-            {
-                WaitForSingleObject(mutex, INFINITE);//Á∫øÁ®ãÂêåÊ≠•
-
-                closesocket(sock);
-                int i = 0;
-                while (ALLCLIENT[i] == sock){ i++; }
-                ALLCLIENT[i] = 0;//Êñ≠ÂºÄÁΩÆ0
-
-                ReleaseMutex(mutex);
-
-                free(handleInfo); free(ioInfo);
-                continue;
-            }
-            int i = 0;
-
-            for (; i < client_count;i++)
-            {
-                if (ALLCLIENT[i] != 0)//Âà§Êñ≠ÊòØÂê¶‰∏∫Â∑≤ËøûÊé•ÁöÑÂ•óÊé•Â≠ó
-                {
-                    if (ALLCLIENT[i] != sock)
-                    {
-                        LPPER_IO_DATA newioInfo;
-                        newioInfo = (LPPER_IO_DATA)malloc(sizeof(PER_IO_DATA));//Âä®ÊÄÅÂàÜÈÖçÂÜÖÂ≠ò
-                        memset(&(newioInfo->overlapped), 0, sizeof(OVERLAPPED));
-                        strcpy(newioInfo->buffer, ioInfo->buffer);//ÈáçÊñ∞ÊûÑÂª∫Êñ∞ÁöÑÂÜÖÂ≠òÔºåÈò≤Ê≠¢Â§öÊ¨°ÈáäÊîæfree
-                        newioInfo->wsaBuf.buf = newioInfo->buffer;
-                        newioInfo->wsaBuf.len = bytesTrans;
-                        newioInfo->rwMode = 0;
-
-                        WSASend(ALLCLIENT[i], &(newioInfo->wsaBuf),//ÂõûÂ£∞
-                                1, NULL, 0, &(newioInfo->overlapped), NULL);
-                    }
-                    else
-                    {
-                        memset(&(ioInfo->overlapped), 0, sizeof(OVERLAPPED));
-                        ioInfo->wsaBuf.len = bytesTrans;
-                        ioInfo->rwMode = 0;
-                        WSASend(ALLCLIENT[i], &(ioInfo->wsaBuf),//ÂõûÂ£∞
-                                1, NULL, 0, &(ioInfo->overlapped), NULL);
-                    }
-                }
-            }
-            ioInfo = (LPPER_IO_DATA)malloc(sizeof(PER_IO_DATA));//Âä®ÊÄÅÂàÜÈÖçÂÜÖÂ≠ò
-            memset(&(ioInfo->overlapped), 0, sizeof(OVERLAPPED));
-            ioInfo->wsaBuf.len = BUF_SIZE;
-            ioInfo->wsaBuf.buf = ioInfo->buffer;
-            ioInfo->rwMode = 1;
-            WSARecv(sock, &(ioInfo->wsaBuf),//ÂÜçÈùûÈòªÂ°ûÂºèÊé•Êî∂
-                    1, NULL, &flags, &(ioInfo->overlapped), NULL);
+            //πÿ±’SOCKET
+            cout<<"["<<GetCurrentProcessId()<<":"<<GetCurrentThreadId()<<"]"<<PerHandleData->sock<<" SOCKETπÿ±’"<<endl;
+            closesocket(PerHandleData->sock);
+            free(PerHandleData);
+            free(PerIoData);
+            continue;
         }
-        else
-        {
-            puts("message sent!");
-            free(ioInfo);
+        //Œ™«Î«Û∑˛ŒÒ
+        cout<<"π§◊˜œﬂ≥Ãø™ º¥¶¿ÌΩ” ’¥¶¿Ì"<<endl;
+        cout<<PerHandleData->sock<<" SOCKET ’µΩœ˚œ¢ : "<<PerIoData->Buff<<endl;
+        //ªÿ”¶øÕªß∂À
+        //ZeroMemory(PerIoData->Buff,4096);
+        string option;
+        for (int i = 0; i < 4096; ++i) {
+            if(PerIoData->Buff[i] != ' '){
+                option+=PerIoData->Buff[i];
+            } else
+                break;
+        }
+        //ªÒ»°∑˛ŒÒ∆˜∂Àƒø¬º
+        if(option == "dir"){
+            WIN32_FIND_DATA fd;
+            HANDLE hff = FindFirstFile(".\\*.*",&fd);;//Ω®¡¢“ª∏ˆœﬂ≥Ã
+            //À—À˜Œƒº˛
+            //ø…“‘Õ®π˝FindFirstFile£®£©∫Ø ˝∏˘æ›µ±«∞µƒŒƒº˛¥Ê∑≈¬∑æ∂≤È’“∏√Œƒº˛¿¥∞—¥˝≤Ÿ◊˜Œƒº˛µƒœ‡πÿ Ù–‘∂¡»°µΩWIN32_FIND_DATAΩ·ππ÷–»•
+            if (hff == INVALID_HANDLE_VALUE)//∑¢…˙¥ÌŒÛ
+            {
+                const char *errstr = "can't list files!\n";
+                printf("list file error!\n");
+                if (send(PerHandleData->sock, errstr, strlen(errstr), 0) == SOCKET_ERROR)
+                {
+                    printf("error occurs when senging file list!\n");
+                }
+                //closesocket(datatcps);
+                //return 0;
+            }
+            BOOL fMoreFiles = TRUE;
+            char filerecord[4096];
+            while (fMoreFiles)
+            {//∑¢ÀÕ¥ÀœÓŒƒº˛–≈œ¢
+                FILETIME ft;         //Œƒº˛Ω®¡¢ ±º‰
+                FileTimeToLocalFileTime(&fd.ftLastWriteTime, &ft);
+                SYSTEMTIME lastwtime;     //SYSTEMTIMEœµÕ≥ ±º‰ ˝æ›Ω·ππ
+                FileTimeToSystemTime(&ft, &lastwtime);
+                char *dir = const_cast<char *>(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? "<DIR>" : " ");
+                sprintf(filerecord+strlen(filerecord), "%04d-%02d-%02d %02d:%02d  %5s %10d   %-20s\n",
+                        lastwtime.wYear,
+                        lastwtime.wMonth,
+                        lastwtime.wDay,
+                        lastwtime.wHour,
+                        lastwtime.wMinute,
+                        dir,
+                        fd.nFileSizeLow,
+                        fd.cFileName);
+                fMoreFiles = FindNextFile(hff, &fd);
+            }
+            send(PerHandleData->sock, filerecord, strlen(filerecord), 0);
+            ZeroMemory(&filerecord,4096);
+            Flags = 0;
+            ZeroMemory((LPVOID)&(PerIoData->Overlapped),sizeof(OVERLAPPED));
+            PerIoData->DataBuff.len = 4096;
+            PerIoData->DataBuff.buf = PerIoData->Buff;
+            WSARecv(PerHandleData->sock,&(PerIoData->DataBuff),1,&SendBytes,0,&(PerIoData->Overlapped),NULL);
+            cout << "π§◊˜œﬂ≥Ã∑µªÿOK" << std::endl;
+        }
+        else if (option == "get"){
+            string name;
+            for (int i = 4; i < 9; ++i) {
+                if(PerIoData->Buff[i] != '\0'){
+                    name+=PerIoData->Buff[i];
+                } else
+                    break;
+            }
+            HANDLE hFile;
+            unsigned long long file_size = 0;
+            char Buffer[4096];
+            DWORD dwNumberOfBytesRead;
+            const char * filename = name.c_str();
+            hFile = CreateFile(filename,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+            file_size = GetFileSize(hFile,NULL);
+            cout << file_size <<endl;
+            send(PerHandleData->sock,(char*)&file_size,sizeof(unsigned long long)+1,NULL);
+            do
+            {
+                ::ReadFile(hFile,Buffer,sizeof(Buffer),&dwNumberOfBytesRead,NULL);
+                ::send(PerHandleData->sock,Buffer,dwNumberOfBytesRead,0);
+            } while (dwNumberOfBytesRead);
+            CloseHandle(hFile);
+            Flags = 0;
+            ZeroMemory((LPVOID)&(PerIoData->Overlapped),sizeof(OVERLAPPED));
+            PerIoData->DataBuff.len = 4096;
+            PerIoData->DataBuff.buf = PerIoData->Buff;
+            WSARecv(PerHandleData->sock,&(PerIoData->DataBuff),1,&SendBytes,0,&(PerIoData->Overlapped),NULL);
+            cout << "π§◊˜œﬂ≥Ã∑µªÿOK" << std::endl;
         }
     }
-    return 0;
 }
+
 
 #endif //ELYSIUMNET_ASYNFTPSERVER_HPP
