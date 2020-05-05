@@ -36,12 +36,9 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9ade2292-2b24-489e-84b2-085cc23a1902" name="Default Changelist" comment="add basic FTPServer">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+    <list default="true" id="9ade2292-2b24-489e-84b2-085cc23a1902" name="Default Changelist" comment="edit IOCP FTPServer">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Net/AsynFTPServer.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/Net/AsynFTPServer.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -141,7 +138,15 @@
       <workItem from="1588416721532" duration="320000" />
       <workItem from="1588474814844" duration="321000" />
       <workItem from="1588598136839" duration="205000" />
-      <workItem from="1588637808342" duration="1133000" />
+      <workItem from="1588637808342" duration="1476000" />
+      <workItem from="1588641175127" duration="80000" />
+      <workItem from="1588641747711" duration="5775000" />
+      <workItem from="1588653363748" duration="846000" />
+      <workItem from="1588657811639" duration="1213000" />
+      <workItem from="1588659142298" duration="476000" />
+      <workItem from="1588659737558" duration="2217000" />
+      <workItem from="1588663885280" duration="977000" />
+      <workItem from="1588682297104" duration="266000" />
     </task>
     <task id="LOCAL-00001" summary="&quot;添加SingleSocketClient文件，完成单接口socket客户端&quot;">
       <created>1586911032968</created>
@@ -171,7 +176,14 @@
       <option name="project" value="LOCAL" />
       <updated>1588394907660</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="edit IOCP FTPServer">
+      <created>1588639229837</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1588639229837</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -216,7 +228,8 @@
     <MESSAGE value="&quot;采用IOCP技术，初步完成异步Socket AsynServer&quot;" />
     <MESSAGE value="&quot;重构AsynServer程序&quot;" />
     <MESSAGE value="add basic FTPServer" />
-    <option name="LAST_COMMIT_MESSAGE" value="add basic FTPServer" />
+    <MESSAGE value="edit IOCP FTPServer" />
+    <option name="LAST_COMMIT_MESSAGE" value="edit IOCP FTPServer" />
   </component>
   <component name="WindowStateProjectService">
     <state x="361" y="70" key="#New_File_Extensions" timestamp="1586739553996">
@@ -231,40 +244,40 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="223" y="67" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824@0.0.1536.824" timestamp="1586583035438" />
-    <state x="338" y="0" key="CommitChangelistDialog2" timestamp="1588394906440">
+    <state x="338" y="0" key="CommitChangelistDialog2" timestamp="1588682363248">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="338" y="0" key="CommitChangelistDialog2/0.0.1536.824/8.-1080.1536.824@0.0.1536.824" timestamp="1588394906440" />
-    <state x="338" y="0" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1587198185611" />
-    <state width="1492" height="444" key="GridCell.Tab.0.bottom" timestamp="1588638575033">
+    <state x="338" y="0" key="CommitChangelistDialog2/0.0.1536.824@0.0.1536.824" timestamp="1588682363248" />
+    <state width="1293" height="518" key="GridCell.Tab.0.bottom" timestamp="1588664869106">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1537" height="459" key="GridCell.Tab.0.bottom/0.0.1536.824/8.-1080.1536.824@0.0.1536.824" timestamp="1588394957890" />
-    <state width="1492" height="444" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1588638575033" />
-    <state width="1492" height="444" key="GridCell.Tab.0.center" timestamp="1588638575033">
+    <state width="1293" height="518" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1588664869106" />
+    <state width="1293" height="518" key="GridCell.Tab.0.center" timestamp="1588664869106">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1537" height="459" key="GridCell.Tab.0.center/0.0.1536.824/8.-1080.1536.824@0.0.1536.824" timestamp="1588394957890" />
-    <state width="1492" height="444" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1588638575033" />
-    <state width="1492" height="444" key="GridCell.Tab.0.left" timestamp="1588638575033">
+    <state width="1293" height="518" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1588664869106" />
+    <state width="1293" height="518" key="GridCell.Tab.0.left" timestamp="1588664869106">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1537" height="459" key="GridCell.Tab.0.left/0.0.1536.824/8.-1080.1536.824@0.0.1536.824" timestamp="1588394957890" />
-    <state width="1492" height="444" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1588638575033" />
-    <state width="1492" height="444" key="GridCell.Tab.0.right" timestamp="1588638575033">
+    <state width="1293" height="518" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1588664869106" />
+    <state width="1293" height="518" key="GridCell.Tab.0.right" timestamp="1588664869106">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1537" height="459" key="GridCell.Tab.0.right/0.0.1536.824/8.-1080.1536.824@0.0.1536.824" timestamp="1588394957890" />
-    <state width="1492" height="444" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1588638575033" />
+    <state width="1293" height="518" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1588664869106" />
     <state x="129" y="51" width="1211" height="711" key="SettingsEditor" timestamp="1588409782813">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="129" y="51" width="1211" height="711" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1588409782813" />
-    <state x="361" y="145" key="Vcs.Push.Dialog.v2" timestamp="1588394912270">
+    <state x="361" y="145" key="Vcs.Push.Dialog.v2" timestamp="1588639237765">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="361" y="145" key="Vcs.Push.Dialog.v2/0.0.1536.824/8.-1080.1536.824@0.0.1536.824" timestamp="1588394912270" />
-    <state x="361" y="145" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1587198202220" />
+    <state x="361" y="145" key="Vcs.Push.Dialog.v2/0.0.1536.824@0.0.1536.824" timestamp="1588639237765" />
     <state x="430" y="236" key="com.intellij.ide.util.TipDialog" timestamp="1586909145209">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
