@@ -48,7 +48,6 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort);//工作线程
 class FTPServer{
 private:
     WSADATA wsadata;
-    DWORD nThreadID;
     SOCKET sockListen;
     struct sockaddr_in addrLocal;
     int nReuseAddr = 1;
@@ -62,6 +61,7 @@ public:
     FTPServer(){
         if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0){
             cout << "初始化失败" << endl;
+            exit(1);
         }
         hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr,0,0);
         auto a = new SystemInfo();
@@ -89,9 +89,9 @@ public:
 
     void start(){
         while(true){
-            sockAccept = WSAAccept(sockListen,NULL,NULL,NULL,0);
+            sockAccept = WSAAccept(sockListen,nullptr,nullptr,nullptr,0);
             perHandleData = (LPPER_HANDLE_DATA)malloc(sizeof(PER_HANDLE_DATA));
-            if(perHandleData == NULL)
+            if(perHandleData == nullptr)
                 continue;
             cout<<"Accept:socket number "<<sockAccept<<"接入"<<endl;
             perHandleData->sock = sockAccept;
@@ -100,14 +100,14 @@ public:
             memset(&(ioperdata->Overlapped),0,sizeof(OVERLAPPED));
             ioperdata->DataBuff.len = BUF_SIZE;
             ioperdata->DataBuff.buf = ioperdata->Buff;
-            if( ioperdata == NULL)
+            if( ioperdata == nullptr)
             {
                 free(perHandleData);
                 continue;
             }
             //关联
             //cout<<"关联SOCKET和完成端口..."<<endl;
-            if(CreateIoCompletionPort((HANDLE)sockAccept,hCompletionPort,reinterpret_cast<ULONG_PTR>(perHandleData),0) == NULL)
+            if(CreateIoCompletionPort((HANDLE)sockAccept,hCompletionPort,reinterpret_cast<ULONG_PTR>(perHandleData),0) == nullptr)
             {
                 cout<<sockAccept<<"createiocompletionport错误"<<endl;
                 free(perHandleData);
@@ -116,7 +116,7 @@ public:
             }
             ////投递接收操作 必须有这句,否则 后面的数据 无法接受.
             cout<<"投递接收操作"<<endl;
-            if (SOCKET_ERROR == WSARecv(sockAccept,&(ioperdata->DataBuff),1,&dwRecvBytes,&dwFlags,&(ioperdata->Overlapped),NULL))
+            if (SOCKET_ERROR == WSARecv(sockAccept,&(ioperdata->DataBuff),1,&dwRecvBytes,&dwFlags,&(ioperdata->Overlapped),nullptr))
             {
                 cout << "WSARecv ERROR:" << WSAGetLastError() << endl;
             }
@@ -200,7 +200,7 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             ZeroMemory((LPVOID) &(PerIoData->Overlapped), sizeof(OVERLAPPED));
             PerIoData->DataBuff.len = 4096;
             PerIoData->DataBuff.buf = PerIoData->Buff;
-            WSARecv(PerHandleData->sock, &(PerIoData->DataBuff), 1, &SendBytes, 0, &(PerIoData->Overlapped), NULL);
+            WSARecv(PerHandleData->sock, &(PerIoData->DataBuff), 1, &SendBytes, 0, &(PerIoData->Overlapped), nullptr);
             cout << "工作线程返回OK" << std::endl;
         }
         else if (option == "get"){
@@ -216,17 +216,17 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             char Buffer[4096];
             DWORD dwNumberOfBytesRead;
             const char * filename = name.c_str();
-            hFile = CreateFile(filename,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+            hFile = CreateFile(filename,GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
             if (hFile == INVALID_HANDLE_VALUE) {
                 cout << "文件夹中没有该文件" << endl;
                 return 0;
             }
-            file_size = GetFileSize(hFile,NULL);
+            file_size = GetFileSize(hFile,nullptr);
             cout << file_size <<endl;
-            send(PerHandleData->sock,(char*)&file_size,sizeof(unsigned long long)+1,NULL);
+            send(PerHandleData->sock, (char*)&file_size,sizeof(unsigned long long)+1, 0);
             do
             {
-                ::ReadFile(hFile,Buffer,sizeof(Buffer),&dwNumberOfBytesRead,NULL);
+                ::ReadFile(hFile,Buffer,sizeof(Buffer),&dwNumberOfBytesRead,nullptr);
                 ::send(PerHandleData->sock,Buffer,dwNumberOfBytesRead,0);
             } while (dwNumberOfBytesRead);
             CloseHandle(hFile);
@@ -234,11 +234,9 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             ZeroMemory((LPVOID)&(PerIoData->Overlapped),sizeof(OVERLAPPED));
             PerIoData->DataBuff.len = 4096;
             PerIoData->DataBuff.buf = PerIoData->Buff;
-            WSARecv(PerHandleData->sock,&(PerIoData->DataBuff),1,&SendBytes,0,&(PerIoData->Overlapped),NULL);
+            WSARecv(PerHandleData->sock,&(PerIoData->DataBuff),1,&SendBytes,0,&(PerIoData->Overlapped),nullptr);
             cout << "工作线程返回OK" << std::endl;
         }
     }
 }
-
-
 #endif //ELYSIUMNET_ASYNFTPSERVER_HPP
