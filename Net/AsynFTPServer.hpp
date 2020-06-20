@@ -63,12 +63,21 @@ public:
             cout << "初始化失败" << endl;
             exit(1);
         }
+        /*
+         * 完成端口的创建
+         * */
         hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr,0,0);
+        /*
+         * 获得系统信息中的核心数。（本机中为8）四核八线程
+         * */
         auto a = new SystemInfo();
         for (int i = 1; i <= a->get_Number_Processors() * 2; i++) {
-            _beginthreadex(nullptr, 0, WorkerThread, (LPVOID)hCompletionPort, 0, nullptr);
             cout<<"创建工作者线程"<<i<<endl;
+            _beginthreadex(nullptr, 0, WorkerThread, (LPVOID)hCompletionPort, 0, nullptr);
+            Sleep(300);
         }
+
+
         sockListen = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);//不是非阻塞套接字，但是重叠IO套接字。
         if(setsockopt(sockListen,SOL_SOCKET,SO_REUSEADDR,(const char *)&nReuseAddr,sizeof(int)) != 0)
         {
@@ -106,7 +115,7 @@ public:
                 continue;
             }
             //关联
-            //cout<<"关联SOCKET和完成端口..."<<endl;
+            cout<<"关联SOCKET和完成端口..."<<endl;
             if(CreateIoCompletionPort((HANDLE)sockAccept,hCompletionPort,reinterpret_cast<ULONG_PTR>(perHandleData),0) == nullptr)
             {
                 cout<<sockAccept<<"createiocompletionport错误"<<endl;
@@ -115,7 +124,7 @@ public:
                 continue;
             }
             ////投递接收操作 必须有这句,否则 后面的数据 无法接受.
-            cout<<"投递接收操作"<<endl;
+            cout<<"收到客户端连接，投递到完成端口交给工作线程"<<endl;
             if (SOCKET_ERROR == WSARecv(sockAccept,&(ioperdata->DataBuff),1,&dwRecvBytes,&dwFlags,&(ioperdata->Overlapped),nullptr))
             {
                 cout << "WSARecv ERROR:" << WSAGetLastError() << endl;
@@ -124,9 +133,13 @@ public:
     }
 };
 
+
+/*
+ * 工作线程
+ */
 unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
 {
-    HANDLE ComPort = (HANDLE)CompletionPort;
+    auto ComPort = (HANDLE)CompletionPort;
     DWORD BytesTransferred;
     LPPER_HANDLE_DATA PerHandleData;
     LPPER_IO_OPERATION_DATA PerIoData;
@@ -134,9 +147,8 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
     DWORD Flags = 0;
     while(TRUE) {
         //等待完成端口上SOCKET的完成
-        //cout<<"["<<GetCurrentProcessId()<<":"<<GetCurrentThreadId()<<"]"<<":等待完成端口上SOCKET的完成"<<endl;
-        GetQueuedCompletionStatus(ComPort, &BytesTransferred, reinterpret_cast<PULONG_PTR>((LPDWORD) &PerHandleData),
-                                  (LPOVERLAPPED *) &PerIoData, INFINITE);
+        cout<<"工作进程: "<<GetCurrentProcessId()<<"  工作线程: "<<GetCurrentThreadId()<<" "<<":等待客户端连接"<<endl;
+        GetQueuedCompletionStatus(ComPort, &BytesTransferred, reinterpret_cast<PULONG_PTR>((LPDWORD) &PerHandleData),(LPOVERLAPPED *) &PerIoData, INFINITE);
         //检查是否有错误产生
         if (BytesTransferred == 0) {
             //关闭SOCKET
@@ -148,12 +160,12 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             continue;
         }
         //为请求服务
-        cout << "工作线程开始处理接收处理" << endl;
-        cout << PerHandleData->sock << " SOCKET收到消息 : " << PerIoData->Buff << endl;
+        cout << "工作线程: " << GetCurrentThreadId() <<"开始处理接收处理" << endl;
+        cout << "工作线程: "<< GetCurrentThreadId() << " 收到消息 : " << PerIoData->Buff << " 获得信息的大小: "<< sizeof(PerIoData->Buff) << endl;
         //回应客户端
         //ZeroMemory(PerIoData->Buff,4096);
         string option;
-        for (int i = 0; i < 4096; ++i) {
+        for (int i = 0; i < 8192; ++i) {
             if (PerIoData->Buff[i] != ' ') {
                 option += PerIoData->Buff[i];
             } else
@@ -205,6 +217,7 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
         }
         else if (option == "get"){
             string name;
+            cout << "执行get命令" <<endl;
             for (int i = 4; i < 9; ++i) {
                 if(PerIoData->Buff[i] != '\0'){
                     name+=PerIoData->Buff[i];
