@@ -40,7 +40,6 @@ typedef struct _PER_IO_OPERATION_DATA
     OVERLAPPED Overlapped;
     WSABUF DataBuff;
     char Buff[BUF_SIZE];
-    //BOOL OperationType;
 }PER_IO_OPERATION_DATA,* LPPER_IO_OPERATION_DATA;
 
 unsigned int WINAPI WorkerThread(LPVOID CompletionPort);//工作线程
@@ -79,6 +78,7 @@ public:
 
 
         sockListen = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);//不是非阻塞套接字，但是重叠IO套接字。
+
         if(setsockopt(sockListen,SOL_SOCKET,SO_REUSEADDR,(const char *)&nReuseAddr,sizeof(int)) != 0)
         {
             cout<<"setsockopt错误"<<endl;
@@ -98,7 +98,20 @@ public:
 
     void start(){
         while(true){
+            //此时接收到一个连接：
             sockAccept = WSAAccept(sockListen,nullptr,nullptr,nullptr,0);
+
+            /*
+             *
+             * perHandleData 是  LPPER_HANDLE_DATA
+             *
+             * typedef struct _PER_HANDLE_DATA
+             * {
+             *     SOCKET sock;
+             * }PER_HANDLE_DATA,* LPPER_HANDLE_DATA;
+             *
+             *
+             * */
             perHandleData = (LPPER_HANDLE_DATA)malloc(sizeof(PER_HANDLE_DATA));
             if(perHandleData == nullptr)
                 continue;
@@ -106,12 +119,17 @@ public:
             perHandleData->sock = sockAccept;
 
             ioperdata = (LPPER_IO_OPERATION_DATA)malloc(sizeof(PER_IO_OPERATION_DATA));
+
             memset(&(ioperdata->Overlapped),0,sizeof(OVERLAPPED));
+
             ioperdata->DataBuff.len = BUF_SIZE;
             ioperdata->DataBuff.buf = ioperdata->Buff;
+
+            //cout << "IOPERDATA->DataBuff.buf: " << ioperdata->DataBuff.buf <<endl;
             if( ioperdata == nullptr)
             {
                 free(perHandleData);
+                cout << "获取信息为空";
                 continue;
             }
             //关联
@@ -123,9 +141,9 @@ public:
                 free(ioperdata);
                 continue;
             }
-            ////投递接收操作 必须有这句,否则 后面的数据 无法接受.
+            //WSARecv为投递操作
             cout<<"收到客户端连接，投递到完成端口交给工作线程"<<endl;
-            if (SOCKET_ERROR == WSARecv(sockAccept,&(ioperdata->DataBuff),1,&dwRecvBytes,&dwFlags,&(ioperdata->Overlapped),nullptr))
+            if (SOCKET_ERROR == WSARecv(sockAccept, &(ioperdata->DataBuff), 1, &dwRecvBytes, &dwFlags, &(ioperdata->Overlapped), nullptr))
             {
                 cout << "WSARecv ERROR:" << WSAGetLastError() << endl;
             }
@@ -144,23 +162,21 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
     LPPER_HANDLE_DATA PerHandleData;
     LPPER_IO_OPERATION_DATA PerIoData;
     DWORD SendBytes,RecvBytes;
-    DWORD Flags = 0;
     while(TRUE) {
         //等待完成端口上SOCKET的完成
-        cout<<"工作进程: "<<GetCurrentProcessId()<<"  工作线程: "<<GetCurrentThreadId()<<" "<<":等待客户端连接"<<endl;
+        cout<<"工作进程: "<< GetCurrentProcessId() <<"  工作线程: "<<GetCurrentThreadId()<<" "<<":等待客户端连接"<<endl;
         GetQueuedCompletionStatus(ComPort, &BytesTransferred, reinterpret_cast<PULONG_PTR>((LPDWORD) &PerHandleData),(LPOVERLAPPED *) &PerIoData, INFINITE);
         //检查是否有错误产生
         if (BytesTransferred == 0) {
             //关闭SOCKET
-            cout << "[" << GetCurrentProcessId() << ":" << GetCurrentThreadId() << "]" << PerHandleData->sock
-                 << " SOCKET关闭" << endl;
+            cout << "[" << GetCurrentProcessId() << ":" << GetCurrentThreadId() << "]" << PerHandleData->sock << " SOCKET关闭" << endl;
             closesocket(PerHandleData->sock);
             free(PerHandleData);
             free(PerIoData);
             continue;
         }
         //为请求服务
-        cout << "工作线程: " << GetCurrentThreadId() <<"开始处理接收处理" << endl;
+        cout << "工作线程: " << GetCurrentThreadId() << "开始处理接收处理" << endl;
         cout << "工作线程: "<< GetCurrentThreadId() << " 收到消息 : " << PerIoData->Buff << " 获得信息的大小: "<< sizeof(PerIoData->Buff) << endl;
         //回应客户端
         //ZeroMemory(PerIoData->Buff,4096);
@@ -171,6 +187,9 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             } else
                 break;
         }
+
+        //
+        //cout << option << endl;
         //获取服务器端目录
         if (option == "dir") {
             WIN32_FIND_DATA fd;
@@ -206,9 +225,9 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
                         fd.cFileName);
                 fMoreFiles = FindNextFile(hff, &fd);
             }
+            cout << filerecord << endl;
             send(PerHandleData->sock, filerecord, strlen(filerecord), 0);
             ZeroMemory(&filerecord, 4096);
-            Flags = 0;
             ZeroMemory((LPVOID) &(PerIoData->Overlapped), sizeof(OVERLAPPED));
             PerIoData->DataBuff.len = 4096;
             PerIoData->DataBuff.buf = PerIoData->Buff;
@@ -217,7 +236,6 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
         }
         else if (option == "get"){
             string name;
-            cout << "执行get命令" <<endl;
             for (int i = 4; i < 9; ++i) {
                 if(PerIoData->Buff[i] != '\0'){
                     name+=PerIoData->Buff[i];
@@ -243,7 +261,86 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
                 ::send(PerHandleData->sock,Buffer,dwNumberOfBytesRead,0);
             } while (dwNumberOfBytesRead);
             CloseHandle(hFile);
-            Flags = 0;
+            ZeroMemory((LPVOID)&(PerIoData->Overlapped),sizeof(OVERLAPPED));
+            PerIoData->DataBuff.len = 4096;
+            PerIoData->DataBuff.buf = PerIoData->Buff;
+            WSARecv(PerHandleData->sock,&(PerIoData->DataBuff),1,&SendBytes,0,&(PerIoData->Overlapped),nullptr);
+            cout << "工作线程返回OK" << std::endl;
+        }
+        else if (option == "post"){
+            string name;
+            for (int i = 5; i < 8192; ++i) {
+                if(PerIoData->Buff[i] != '\0'){
+                    name+=PerIoData->Buff[i];
+                } else
+                    break;
+            }
+            cout << "执行post" << endl;
+            cout << "准备读取文件: "<< name << "文件名" << endl;
+
+            /*
+             * 创建一个新的Socket
+             */
+
+            SOCKET s_server = socket(AF_INET, SOCK_STREAM, 0);
+
+            SOCKADDR_IN server_addr;
+            server_addr.sin_family = AF_INET;
+            server_addr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+            server_addr.sin_port = htons(9091);
+
+            if (bind(s_server, (SOCKADDR *)&server_addr, sizeof(SOCKADDR)) == SOCKET_ERROR) {
+                cout << "套接字绑定失败！" << endl;
+                WSACleanup();
+            }
+            else {
+                cout << "套接字绑定成功！" << endl;
+            }
+            //设置套接字为监听状态
+            if (listen(s_server, SOMAXCONN) < 0) {
+                cout << "设置监听状态失败！" << endl;
+                WSACleanup();
+            }
+            else {
+                cout << "设置监听状态成功！" << endl;
+            }
+            cout << "服务端正在监听连接，请稍候...." << endl;
+
+            auto len = sizeof(SOCKADDR);
+            auto s_accept = accept(s_server, (SOCKADDR *)&server_addr, reinterpret_cast<int *>(&len));
+            if (s_accept == SOCKET_ERROR) {
+                cout << "连接失败！" << endl;
+                WSACleanup();
+                return 0;
+            }
+            cout << "连接建立，准备接受数据" << endl;
+
+            char  buff[8192];
+            FILE *fp;
+            int  n;
+
+            if((fp = fopen(name.c_str(),"ab") ) == NULL )
+            {
+                printf("File.\n");
+                closesocket(s_accept);
+                exit(1);
+            }
+
+            while(1){
+                n = recv(s_accept, buff, BUF_SIZE,0);
+                if(n == 0)
+                    break;
+                fwrite(buff, 1, n, fp);
+            }
+            buff[n] = '\0';
+            printf("recv msg from client: %s\n", buff);
+
+            fclose(fp);
+
+            closesocket(s_accept);
+
+
+
             ZeroMemory((LPVOID)&(PerIoData->Overlapped),sizeof(OVERLAPPED));
             PerIoData->DataBuff.len = 4096;
             PerIoData->DataBuff.buf = PerIoData->Buff;
