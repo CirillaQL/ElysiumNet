@@ -179,7 +179,7 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
         cout << "工作线程: " << GetCurrentThreadId() << "开始处理接收处理" << endl;
         cout << "工作线程: "<< GetCurrentThreadId() << " 收到消息 : " << PerIoData->Buff << " 获得信息的大小: "<< sizeof(PerIoData->Buff) << endl;
         //回应客户端
-        //ZeroMemory(PerIoData->Buff,4096);
+        cout << "继续执行" << endl;
         string option;
         for (int i = 0; i < 8192; ++i) {
             if (PerIoData->Buff[i] != ' ') {
@@ -187,12 +187,12 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             } else
                 break;
         }
-
-        //
-        //cout << option << endl;
+        cout <<"收到指令:" <<option  << "结束"<<endl;
         //获取服务器端目录
         if (option == "dir") {
+            cout << "执行dir" << endl;
             WIN32_FIND_DATA fd;
+
             HANDLE hff = FindFirstFile(".\\*.*", &fd);;//建立一个线程
             //搜索文件
             //可以通过FindFirstFile（）函数根据当前的文件存放路径查找该文件来把待操作文件的相关属性读取到WIN32_FIND_DATA结构中去
@@ -207,7 +207,9 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
                 //return 0;
             }
             BOOL fMoreFiles = TRUE;
+
             char filerecord[4096];
+
             while (fMoreFiles) {//发送此项文件信息
                 FILETIME ft;         //文件建立时间
                 FileTimeToLocalFileTime(&fd.ftLastWriteTime, &ft);
@@ -235,6 +237,7 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             cout << "工作线程返回OK" << std::endl;
         }
         else if (option == "get"){
+            cout << "执行get"<<endl;
             string name;
             for (int i = 4; i < 9; ++i) {
                 if(PerIoData->Buff[i] != '\0'){
@@ -250,22 +253,33 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             hFile = CreateFile(filename,GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
             if (hFile == INVALID_HANDLE_VALUE) {
                 cout << "文件夹中没有该文件" << endl;
-                return 0;
+
+                char* ans = "N";
+                send(PerHandleData->sock,ans,8192,0);
+                shutdown(PerHandleData->sock,SD_SEND);
+
+            }else{
+                file_size = GetFileSize(hFile,nullptr);
+                cout << file_size <<endl;
+
+                char* ficdc = const_cast<char *>(name.c_str());  //文件名
+                FILE *fp = fopen(ficdc, "rb");  //以二进制方式打开文件
+
+                char buffer[BUF_SIZE] = {0};  //缓冲区
+                int nCount;
+                while( (nCount = fread(buffer, 1, BUF_SIZE, fp)) > 0 ){
+                    send(PerHandleData->sock, buffer, nCount, 0);
+                }
+
+                shutdown(PerHandleData->sock, SD_SEND);  //文件读取完毕，断开输出流，向客户端发送FIN包
+                fclose(fp);
             }
-            file_size = GetFileSize(hFile,nullptr);
-            cout << file_size <<endl;
-            send(PerHandleData->sock, (char*)&file_size,sizeof(unsigned long long)+1, 0);
-            do
-            {
-                ::ReadFile(hFile,Buffer,sizeof(Buffer),&dwNumberOfBytesRead,nullptr);
-                ::send(PerHandleData->sock,Buffer,dwNumberOfBytesRead,0);
-            } while (dwNumberOfBytesRead);
-            CloseHandle(hFile);
             ZeroMemory((LPVOID)&(PerIoData->Overlapped),sizeof(OVERLAPPED));
             PerIoData->DataBuff.len = 4096;
             PerIoData->DataBuff.buf = PerIoData->Buff;
             WSARecv(PerHandleData->sock,&(PerIoData->DataBuff),1,&SendBytes,0,&(PerIoData->Overlapped),nullptr);
-            cout << "工作线程返回OK" << std::endl;
+            cout << "工作线程"<< GetCurrentThreadId() << "工作完毕" << std::endl;
+
         }
         else if (option == "post"){
             string name;
@@ -276,7 +290,7 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
                     break;
             }
             cout << "执行post" << endl;
-            cout << "准备读取文件: "<< name << "文件名" << endl;
+            cout << "准备读取文件: "<< name << endl;
 
             /*
              * 创建一个新的Socket
@@ -315,30 +329,18 @@ unsigned int WINAPI WorkerThread(LPVOID CompletionPort)//线程的执行
             }
             cout << "连接建立，准备接受数据" << endl;
 
-            char  buff[8192];
-            FILE *fp;
-            int  n;
-
-            if((fp = fopen(name.c_str(),"ab") ) == NULL )
-            {
-                printf("File.\n");
-                closesocket(s_accept);
-                exit(1);
+            char *_filename = const_cast<char *>(name.c_str());
+            FILE *fp = fopen(_filename, "wb");
+            char buffer[8192] = {0};  //文件缓冲区
+            int nCount;
+            while( (nCount = recv(s_accept, buffer, 8192, 0)) > 0 ){
+                fwrite(buffer, nCount, 1, fp);
             }
-
-            while(1){
-                n = recv(s_accept, buff, BUF_SIZE,0);
-                if(n == 0)
-                    break;
-                fwrite(buff, 1, n, fp);
-            }
-            buff[n] = '\0';
-            printf("recv msg from client: %s\n", buff);
-
+            puts("文件接收成功!");
+            //文件接收完毕后直接关闭套接字，无需调用shutdown()
             fclose(fp);
 
             closesocket(s_accept);
-
 
 
             ZeroMemory((LPVOID)&(PerIoData->Overlapped),sizeof(OVERLAPPED));
